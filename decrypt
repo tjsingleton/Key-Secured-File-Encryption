@@ -1,0 +1,26 @@
+KEY="/path/to/private.key" # private key source
+
+until [ -z "$1" ]  # Until all parameters used up . . .
+do
+  DIR=`dirname $1`
+  FILE=`basename $1`
+  ORIG_FILE=`echo $FILE | sed 's/^\(.*\)\.secure/\1/'` # there has to be a better way
+  cd $DIR
+
+  # expand tar
+  tar xf $FILE
+
+  # decrypt password
+  openssl rsautl -decrypt -inkey $KEY -in $ORIG_FILE-tmp/$ORIG_FILE.ssl -out $ORIG_FILE-tmp/$ORIG_FILE.sec
+
+  # decrypt file
+  openssl enc -d -aes-256-cbc -salt -in $ORIG_FILE-tmp/$ORIG_FILE.enc -out $ORIG_FILE -pass file:$ORIG_FILE-tmp/$ORIG_FILE.sec
+
+  # remove incidentals
+  rm -rf $ORIG_FILE-tmp
+
+  # go back
+  cd $OLDPWD
+
+  shift
+done
